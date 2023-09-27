@@ -23,25 +23,15 @@ config = Config()
 # Experimental data is stored in the ‘logs’ folder, with each experiment having a separate folder.
 # Manually enter the experiment name path, which contains the experimental configuration, logs, and trained model files.
 
-now_dir = os.getcwd()
-sys.path.append(now_dir)
-
-np = int(np.ceil((os.cpu_count() or 4) / 1.5))
+cwd = os.getcwd()
+n_cpu = int(np.ceil((os.cpu_count() or 4) / 1.5))
 per = 3.0 if config.is_half else 3.7
+os.makedirs("%s/logs/%s" % (cwd, args.name), exist_ok=True)
 
-os.makedirs("%s/logs/%s" % (now_dir, args.name), exist_ok=True)
-f = open("%s/logs/%s/preprocess.log" % (now_dir, args.name), "w")
-f.close()
+# Step 2a: Automatically traverse all files in the training folder that can be decoded into audio and perform slice normalization. Generates 2 wav folders in the experiment directory. Currently, only single-singer/speaker training is supported.
+Popen([config.python_cmd, "infer/modules/train/preprocess.py", args.dataset, str(args.sample_rate), str(n_cpu), f"{cwd}/logs/{args.name}", str(config.noparallel), "%.1f" % per]).wait()
 
-cmd = '"%s" infer/modules/train/preprocess.py "%s" %s %s "%s/logs/%s" %s %.1f' % (
-    config.python_cmd,
-    args.dataset,
-    args.sample_rate,
-    np,
-    now_dir,
-    args.name,
-    config.noparallel,
-    per,
-)
-Popen(cmd, shell=True).wait()
+# Step 2b: Use CPU to extract pitch (if the model has pitch), use GPU to extract features (select GPU index).
 
+
+# Step 3: Fill in the training settings and start training the model and index.
