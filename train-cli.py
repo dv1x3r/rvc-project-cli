@@ -10,6 +10,7 @@ parser = ArgumentParser(description="RVC Model Train CLI")
 
 parser.add_argument("--name", required=True, help="Experiment name")
 parser.add_argument("--dataset", required=True, help="Path to the dataset folder")
+parser.add_argument("--version", default="v2", help="Optional: (default: %(default)s)")
 parser.add_argument(
     "--sample_rate",
     default=40000,
@@ -22,9 +23,14 @@ parser.add_argument(
     choices=["pm", "harvest", "dio", "rmvpe", "rmvpe_gpu"],
 )
 parser.add_argument(
-    "--gpus_rmvpe",
+    "--gpu_rmvpe",
     default="-",
     help="Optional: Enter the GPU index(es) separated by '-', e.g., 0-0-1 to use 2 processes in GPU0 and 1 process in GPU1",
+)
+parser.add_argument(
+    "--gpu",
+    default="",
+    help="Optional: Enter the GPU index(es) separated by '-', e.g., 0-1-2 to use GPU 0, 1, and 2",
 )
 
 args = parser.parse_args()
@@ -59,7 +65,33 @@ Popen(
 
 # Step 2b: Use CPU to extract pitch (if the model has pitch), use GPU to extract features (select GPU index).
 
-if args.method != "rmvpe_gpu":
+if args.method == "rmvpe_gpu" and args.gpu_rmvpe == "-":
+    Popen(
+        [
+            config.python_cmd,
+            "infer/modules/train/extract/extract_f0_rmvpe_dml.py",
+            f"{cwd}/logs/{args.name}",
+        ]
+    ).wait()
+elif args.method == "rmvpe_gpu":
+    ps = []
+    gpus_rmvpe = args.gpu_rmvpe.split("-")
+    for idx, n_g in enumerate(gpus_rmvpe):
+        p = Popen(
+            [
+                config.python_cmd,
+                "infer/modules/train/extract/extract_f0_rmvpe.py",
+                str(len(gpus_rmvpe)),
+                str(idx),
+                str(n_g),
+                f"{cwd}/logs/{args.name}",
+                str(config.is_half),
+            ]
+        )
+        ps.append(p)
+    for p in ps:
+        p.wait()
+else:
     Popen(
         [
             config.python_cmd,
@@ -67,39 +99,25 @@ if args.method != "rmvpe_gpu":
             f"{cwd}/logs/{args.name}",
             str(n_cpu),
             args.method,
-        ],
-        cwd=cwd,
+        ]
     ).wait()
-else:
-    if args.gpus_rmvpe != "-":
-        gpus_rmvpe = args.gpus_rmvpe.split("-")
-        leng = len(gpus_rmvpe)
-        ps = []
-        for idx, n_g in enumerate(gpus_rmvpe):
-            p = Popen(
-                [
-                    config.python_cmd,
-                    "infer/modules/train/extract/extract_f0_rmvpe.py",
-                    str(leng),
-                    str(idx),
-                    str(n_cpu),
-                    f"{cwd}/logs/{args.name}",
-                    str(config.is_half),
-                ],
-                cwd=cwd,
-            )
-            ps.append(p)
-        for p in ps:
-            p.wait()
-    else:
-        Popen(
-            [
-                config.python_cmd,
-                "infer/modules/train/extract/extract_f0_rmvpe_dml.py",
-                f"{cwd}/logs/{args.name}",
-            ],
-            cwd=cwd,
-        ).wait()
 
+ps = []
+gpus = args.gpu.split("-")
+for idx, n_g in enumerate(gpus):
+    p = Popen(
+        [
+            config.python_cmd,
+            "infer/modules/train/extract_feature_print.py",
+            config.device,
+            str(len(gpus)),
+            str(idx),
+            f"{cwd}/logs/{args.name}",
+            args.version,
+        ]
+    )
+    ps.append(p)
+for p in ps:
+    p.wait()
 
 # Step 3: Fill in the training settings and start training the model and index.
