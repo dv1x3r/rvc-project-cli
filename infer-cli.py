@@ -1,3 +1,4 @@
+import os
 import sys
 from argparse import ArgumentParser
 from dotenv import load_dotenv
@@ -23,6 +24,9 @@ parser.add_argument("--protect", default=0.33, help="Optional. Protect voiceless
 args = parser.parse_args()
 sys.argv = sys.argv[:1]
 print(args)
+
+os.chdir(os.path.abspath(os.path.dirname(__file__)))
+print(os.getcwd())
 
 load_dotenv()
 vc = VC(Config())

@@ -31,6 +31,9 @@ args = parser.parse_args()
 sys.argv = sys.argv[:1]
 print(args)
 
+os.chdir(os.path.abspath(os.path.dirname(__file__)))
+print(os.getcwd())
+
 # load_dotenv()
 config = Config()
 
