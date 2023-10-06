@@ -166,11 +166,7 @@ faiss.write_index(
 batch_size_add = 8192
 for i in range(0, big_npy.shape[0], batch_size_add):
     index.add(big_npy[i : i + batch_size_add])
-faiss.write_index(
-    index,
-    "%s/added_IVF%s_Flat_nprobe_%s_%s_%s.index"
-    % (exp_dir, n_ivf, index_ivf.nprobe, args.name, args.version),
-)
+faiss.write_index(index, "%s/added.index" % (exp_dir))
 
 # train model
 
