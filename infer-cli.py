@@ -32,7 +32,9 @@ load_dotenv()
 vc = VC(Config())
 
 vc.get_vc(args.model)
-_, wav_opt = vc.vc_single(0, args.input, args.transpose, args.f_curve, args.method, "", args.index, args.ratio, args.filter, args.resample, args.rms, args.protect)
+out, wav_opt = vc.vc_single(0, args.input, args.transpose, args.f_curve, args.method, "", args.index, args.ratio, args.filter, args.resample, args.rms, args.protect)
+
+print(out)
 
 wavfile.write(args.output, wav_opt[0], wav_opt[1])
 
