@@ -1,7 +1,10 @@
 import os
 import sys
 from argparse import ArgumentParser
+
 from dotenv import load_dotenv
+load_dotenv()
+
 from configs.config import Config
 from infer.modules.vc.modules import VC
 from scipy.io import wavfile
@@ -28,7 +31,7 @@ print(args)
 os.chdir(os.path.abspath(os.path.dirname(__file__)))
 print(os.getcwd())
 
-load_dotenv()
+
 vc = VC(Config())
 
 vc.get_vc(args.model)
